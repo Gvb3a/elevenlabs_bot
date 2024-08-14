@@ -10,3 +10,4 @@ You can test it [here](https://t.me/GenerateAiVoiceBot)
 - [ ] Add voice selection (how to store files in telegram)
 - [ ] Dubbing (functions are there, just need to integrate with the bot)
 - [ ] Launch instructions (.env, requements.txt) 
+- [ ] To deal with state (text to sound).
