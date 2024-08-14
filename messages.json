@@ -1,3 +1,3 @@
 {
-    "start message": "This bot provides access to ElevenLabs. You will have access to text to speech, Sound Effects generation, dubbing video into different languages, voice cloning and much more. \nThis bot is still under development so many features may not be available. \n[Github]()"
+    "start message": "This bot gives you access to ElevenLabs. You will have access to text to speech, sound effects generation, video dubbing, voice cloning and much more. \n\\help for more information\nWrite something to get quality TTS"
 }
