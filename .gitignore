@@ -1,7 +1,9 @@
+__pycache__/
+.git/
+.idea/
 venv/
+.devdbrc
 .env
+*.db
 *.mp3
 *.ipynb
-__pycache__/
-.devdbrc
-elevenlabs_database.db
