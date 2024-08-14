@@ -16,7 +16,7 @@ from datetime import datetime
 from time import sleep
 
 from api import can_make_request, voices, tts, text_to_sound, next_character_count_reset
-from sql import sql_check, sql_message, sql_select, sql_quota, defult_monthly_quota
+from sql import sql_check, sql_message, sql_select, sql_quota, sql_change, defult_monthly_quota
 
 
 load_dotenv()
@@ -64,12 +64,19 @@ async def command_setting_handler(message: Message) -> None:
     model = sql_select('model', id)
     character_count = sql_select('character_count', id)
 
+    with open('messages.json', 'r') as file:
+        text = json.load(file)['models'][model]
+        full_model_name = text['full_name']  # Example: Eleven Multilingual v2
+        model_button_name = text['switch']  # Example: Switch to a cheaper model
+        full_model_description = text['description']
+
+
     delta = (next_character_count_reset() - datetime.now())
     resets = f'resets in {delta.days} days' if delta.days > 0 else f'resets in {delta.seconds//3600} hour and {delta.seconds // 60 % 60} minuts'
-    text = f'Name: {name}\nID: {id}\nTotal characters: {character_count}\n\nCharacter quota ({resets}) \nTotal: {defult_monthly_quota}\nRemaining: {remaining}\n\nVoice: {voice}\nModel: {model}'
+    text = f'Name: {name}\nID: {id}\nTotal characters: {character_count}\n\nCharacter quota ({resets}) \nTotal: {defult_monthly_quota}\nRemaining: {remaining}\n\nVoice: {voice}\nModel: {full_model_name}\n{full_model_description}'
     
     change_voice = [InlineKeyboardButton(text='Change voice', callback_data='change_voice')]
-    change_model = [InlineKeyboardButton(text='Change model', callback_data='change_model')]
+    change_model = [InlineKeyboardButton(text=model_button_name, callback_data='change_model')]
     inline_keyboard = InlineKeyboardMarkup(inline_keyboard=[change_voice, change_model])
     await message.answer(text=text, reply_markup=inline_keyboard)
 
@@ -81,7 +88,43 @@ async def inline_text(callback: CallbackQuery):
 
 @dp.callback_query(F.data == 'change_model')
 async def inline_text(callback: CallbackQuery):
-    await callback.answer(text='In development')
+    name = callback.from_user.full_name
+    username = callback.from_user.username
+    id = callback.from_user.id 
+    message_id = callback.message.message_id
+    chat_id = callback.message.chat.id
+
+    sql_message(name=name, username=username, id=id, message='change_model callback', character=0)
+
+    remaining = sql_quota(id)
+    voice = sql_select('voice', id)
+    model = sql_select('model', id)
+    character_count = sql_select('character_count', id)
+
+    with open('messages.json', 'r') as file:
+        text = json.load(file)['models']
+        
+        new_model = 'eleven_multilingual_v2' if model == 'eleven_turbo_v2_5' else 'eleven_turbo_v2_5' 
+        
+        sql_change(variable='model', new_value=new_model, id=id)
+        
+        text = text[new_model]
+
+        full_model_name = text['full_name']
+        full_model_description = text['description']
+        model_button_name = text['switch']
+
+
+    delta = (next_character_count_reset() - datetime.now())
+    resets = f'resets in {delta.days} days' if delta.days > 0 else f'resets in {delta.seconds//3600} hour and {delta.seconds // 60 % 60} minuts'
+    text = f'Name: {name}\nID: {id}\nTotal characters: {character_count}\n\nCharacter quota ({resets}) \nTotal: {defult_monthly_quota}\nRemaining: {remaining}\n\nVoice: {voice}\nModel: {full_model_name}\n{full_model_description}'
+    
+    change_voice = [InlineKeyboardButton(text='Change voice', callback_data='change_voice')]
+    change_model = [InlineKeyboardButton(text=model_button_name, callback_data='change_model')]
+    inline_keyboard = InlineKeyboardMarkup(inline_keyboard=[change_voice, change_model])
+
+    await bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, reply_markup=inline_keyboard)
+    await callback.answer()
 
 
 

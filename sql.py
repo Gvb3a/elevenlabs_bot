@@ -76,6 +76,16 @@ def sql_select(variable: str, id: int):
     return result
 
 
+def sql_change(variable: str, new_value: str, id: int):
+    connection = sqlite3.connect('elevenlabs_database.db')
+    cursor = connection.cursor()
+    
+    cursor.execute(f"UPDATE users SET '{variable}' = '{new_value}' WHERE id = {id}")
+    
+    connection.commit()
+    connection.close()
+
+
 def sql_message(name: str, username: str, id: int, message: str, character: int):
     connection = sqlite3.connect('elevenlabs_database.db')
     cursor = connection.cursor()
@@ -119,5 +129,6 @@ def sql_quota(id: int):
     connection.close()
 
     return quote
+
 
 sql_launch()

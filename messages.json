@@ -1,3 +1,15 @@
 {
-    "start message": "This bot gives you access to ElevenLabs. You will have access to text to speech, sound effects generation, video dubbing, voice cloning and much more. \n\\help for more information\nWrite something to get quality TTS"
+    "start message": "This bot gives you access to ElevenLabs. You will have access to text to speech, sound effects generation, video dubbing, voice cloning and much more. \n\\help for more information\nWrite something to get quality TTS",
+    "models": {
+        "eleven_multilingual_v2": {
+            "full_name": "Eleven Multilingual v2",
+            "switch": "Switch to a cheaper model",
+            "description": "Our most life-like, emotionally rich mode in 29 languages. Best for voice overs, audiobooks, post-production, or any other content creation needs."
+        },
+        "eleven_turbo_v2_5": {
+            "full_name": "Eleven Turbo v2.5",
+            "switch": "Switch to a more realistic model",
+            "description": "Our high quality, lowest latency model in 32 languages. Best for developer use cases where speed matters. 50% cheaper"
+        }
+    }
 }
