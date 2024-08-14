@@ -8,7 +8,6 @@ from deep_translator import GoogleTranslator
 from time import sleep
 
 import os
-import detectlanguage
 from datetime import datetime
 
 
@@ -23,7 +22,6 @@ detect_api_key = os.getenv('DETECT_LANGUAGE_API')
 client = ElevenLabs(
     api_key=eleven_api_key
 )
-detectlanguage.configuration.api_key = detect_api_key
 
 
 def can_make_request(characters: int, remaining: int):
@@ -87,9 +85,8 @@ def text_to_sound(text: str, file_name: str = 'sound.mp3', duration_seconds: flo
     try:
         start_time = datetime.now()
         print(f'Start text_to_sound. text: {text}, file_name: {file_name}, duration_seconds: {duration_seconds}, prompt_influence: {prompt_influence}')
-        text_language = detectlanguage.simple_detect(text)  # sound generation works only in English
-        
-        text = GoogleTranslator(source=text_language, target='en').translate(text)  # from en to en it will translate instantly
+
+        text = GoogleTranslator(source='auto', target='en').translate(text)
 
         audio = client.text_to_sound_effects.convert(
             text=text,

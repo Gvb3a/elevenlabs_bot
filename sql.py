@@ -1,8 +1,11 @@
 import sqlite3
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from colorama import init, Fore, Style
 
 from api import next_character_count_reset
+
+init()
 
 defult_monthly_quota = 5000
 defult_voice = 'Brittney Hart'
@@ -73,9 +76,11 @@ def sql_select(variable: str, id: int):
     return result
 
 
-def sql_message(name: str, id: int, message: str, character: int):
+def sql_message(name: str, username: str, id: int, message: str, character: int):
     connection = sqlite3.connect('elevenlabs_database.db')
     cursor = connection.cursor()
+
+    sql_check(name=name, username=username, id=id)
 
     nw = datetime.now().strftime('%Y.%m.%d %H:%M')
     cursor.execute(f"INSERT INTO history(name, id, message, character, time) "
@@ -84,6 +89,8 @@ def sql_message(name: str, id: int, message: str, character: int):
     cursor.execute("UPDATE users SET number_of_messages = number_of_messages + 1 WHERE id = ?", (id,))
     cursor.execute("UPDATE users SET character_count = character_count + ? WHERE id = ?", (character, id))
     cursor.execute("UPDATE users SET monthly_quota = monthly_quota - ? WHERE id = ?", (character, id))
+
+    print(f'{Fore.GREEN}{message}{Style.RESET_ALL} by {name}')
 
     connection.commit()
     connection.close()
@@ -94,13 +101,14 @@ def sql_quota(id: int):
     cursor = connection.cursor()
     
     last_quota_update = sql_select('last_quota_update', id)
-    last_quota_update = datetime.strptime('2023.08.21', '%Y.%m.%d')
+    last_quota_update = datetime.strptime(last_quota_update, '%Y.%m.%d')
     next_reset = next_character_count_reset()
 
     nw = datetime.now().strftime('%Y.%m.%d')
                                  
-    if last_quota_update < next_reset - relativedelta(months=1):
+    if last_quota_update < (next_reset - relativedelta(months=1)):
         cursor.execute("UPDATE users SET last_quota_update = ? WHERE id = ?", (nw, id))
+        cursor.execute("UPDATE users SET monthly_quota = ? WHERE id = ?", (defult_monthly_quota, id))
         quote = defult_monthly_quota
 
     else:

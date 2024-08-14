@@ -6,14 +6,17 @@ from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state, State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message, FSInputFile, InputMediaAudio
+from aiogram.types import Message, FSInputFile, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
 from colorama import init, Fore, Style
 from dotenv import load_dotenv
 from os import remove
+from datetime import datetime
 
-from api import can_make_request, tts, text_to_sound
-from sql import sql_check, sql_message, sql_select, sql_quota
+from time import sleep
+
+from api import can_make_request, voices, tts, text_to_sound, next_character_count_reset
+from sql import sql_check, sql_message, sql_select, sql_quota, defult_monthly_quota
 
 
 load_dotenv()
@@ -46,9 +49,40 @@ async def command_start_handler(message: Message) -> None:
 
     await message.answer(text=start_message, parse_mode='Markdown')
 
-    print(f'Start command by {name}')
-    sql_check(name=name, username=username, id=id)
-    sql_message(name=name, id=id, message='Start command', character=0)
+    sql_message(name=name, username=username, id=id, message='Start command', character=0)
+
+
+@dp.message(Command('setting'))
+async def command_setting_handler(message: Message) -> None:
+    name = message.from_user.full_name
+    username = message.from_user.username
+    id = message.from_user.id 
+    sql_message(name=name, username=username, id=id, message='Setting command', character=0)
+
+    remaining = sql_quota(id)
+    voice = sql_select('voice', id)
+    model = sql_select('model', id)
+    character_count = sql_select('character_count', id)
+
+    delta = (next_character_count_reset() - datetime.now())
+    resets = f'resets in {delta.days} days' if delta.days > 0 else f'resets in {delta.seconds//3600} hour and {delta.seconds // 60 % 60} minuts'
+    text = f'Name: {name}\nID: {id}\nTotal characters: {character_count}\n\nCharacter quota ({resets}) \nTotal: {defult_monthly_quota}\nRemaining: {remaining}\n\nVoice: {voice}\nModel: {model}'
+    
+    change_voice = [InlineKeyboardButton(text='Change voice', callback_data='change_voice')]
+    change_model = [InlineKeyboardButton(text='Change model', callback_data='change_model')]
+    inline_keyboard = InlineKeyboardMarkup(inline_keyboard=[change_voice, change_model])
+    await message.answer(text=text, reply_markup=inline_keyboard)
+
+
+@dp.callback_query(F.data == 'change_voice')
+async def inline_text(callback: CallbackQuery):
+    await callback.answer(text='In development')
+
+
+@dp.callback_query(F.data == 'change_model')
+async def inline_text(callback: CallbackQuery):
+    await callback.answer(text='In development')
+
 
 
 @dp.message(F.text, StateFilter(default_state))  # TTS
@@ -58,8 +92,6 @@ async def tts_message_hadler(message: Message, state: FSMContext) -> None:
     id = message.from_user.id
     chat_id = message.chat.id
     text = message.text
-
-    print(f'Start TTS ({text}) by {name}')
 
     sql_check(name=name, username=username, id=id)
     voice = sql_select(variable='voice', id=id)
@@ -85,9 +117,7 @@ async def tts_message_hadler(message: Message, state: FSMContext) -> None:
 
     remove(file_name)
 
-    sql_message(name=name, id=id, message=f'tts: {text}, voice: {voice}, model: {model}', character=character)
-
-    print(f'{Fore.GREEN}Finish TTS by {name}{Style.RESET_ALL}. text: {text}')
+    sql_message(name=name, username=username, id=id, message=f'tts: {text}, voice: {voice}, model: {model}', character=character)
 
 
 if __name__ == '__main__':
